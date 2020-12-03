@@ -1,0 +1,96 @@
+# This playbook is designed to be run on a host that needs yubikeys set up
+# on centos.
+#
+# 20201202 RWT  Initial revision
+
+- hosts: newbuild
+  remote_user: root
+  tasks:
+    - name: Install policycoreutils-python-utils
+      become: yes
+      package:
+        name: policycoreutils-python-utils
+        state: present
+    - name: Install ykclient
+      become: yes
+      package:
+        name: ykclient
+        state: present
+    - name: Install ykpers
+      become: yes
+      package:
+        name: ykpers
+        state: present
+    - name: Install pam_yubico*
+      become: yes
+      package:
+        name: pam_yubico
+        state: present
+    - name: Copy sshd
+      copy:
+        src: /etc/ansible/playbooks/yubikey/sshd
+        dest: /etc/pam.d/sshd
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Copy su
+      copy:
+        src: /etc/ansible/playbooks/yubikey/su
+        dest: /etc/pam.d/su
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Copy sshd
+      copy:
+        src: /etc/ansible/playbooks/yubikey/login
+        dest: /etc/pam.d/login
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Copy sudo
+      copy:
+        src: /etc/ansible/playbooks/yubikey/sudo
+        dest: /etc/pam.d/sudo
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Copy sshd_config
+      copy:
+        src: /etc/ansible/playbooks/yubikey/sshd_config
+        dest: /etc/ssh/sshd_config
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Copy sshd-second_config
+      copy:
+        src: /etc/ansible/playbooks/yubikey/sshd-second_config
+        dest: /etc/ssh/sshd-second_config
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Copy sshd second service file
+      copy:
+        src: /etc/ansible/playbooks/yubikey/sshd-second.service
+        dest: /etc/systemd/system/sshd-second.service
+        owner: root
+        group: root
+        mode: '0644'
+    - name: allow selinux port
+      shell: semanage port -a -t ssh_port_t -p tcp 2222
+    - name: allow port connections
+      shell: firewall-cmd --permanent --add-port=2222/tcp
+    - name: reload firewall
+      shell: firewall-cmd --reload
+    - name: daemon reload
+      shell: systemctl daemon-reload
+    - name: Start second sshd
+      shell: systemctl enable sshd-second.service --now
+    - name: restart second ssh
+      shell: systemctl restart sshd.service
+    - name: copy authorized keys
+      copy:
+        src: /etc/ansible/playbooks/yubikey/authorized_keys
+        dest: /root/.ssh/authorized_keys
+        owner: root
+        group: root
+        mode: '0600'
