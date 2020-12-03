@@ -94,3 +94,10 @@
         owner: root
         group: root
         mode: '0600'
+    - name: copy mappings
+      copy:
+        src: /etc/ansible/playbooks/yubikey/yubikey_mappings
+        dest: /etc/yubikey_mappings
+        owner: root
+        group: root
+        mode: '0600'
